@@ -96,14 +96,14 @@
 
 (use-package fancy-compilation :config (fancy-compilation-mode))
 
-(set-face-attribute 'default nil :font "Julia Mono-11")
-(set-face-attribute 'variable-pitch nil :font "Julia Mono-11")
+(set-face-attribute 'default nil :font "Iosevka Term-13")
+(set-face-attribute 'variable-pitch nil :font "Iosevka Term-13")
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 (use-package doom-themes
   :config
-  (let ((chosen-theme 'doom-acario-light))
+  (let ((chosen-theme 'doom-opera-light))
     (doom-themes-visual-bell-config)
     (load-theme chosen-theme)))
 
@@ -120,3 +120,17 @@
   (which-key-setup-side-window-right))
 
 (use-package magit)
+
+;; (use-package spacious-padding)
+;; (spacious-padding-mode)
+
+(modify-all-frames-parameters
+  '((internal-border-width . 50)
+  (right-divider-width . 12)))
+
+;;(dolist (face '(window-divider
+;;                window-divider-first-pixel
+;;              window-divider-last-pixel))
+;;  (face-spec-reset-face face)
+;;(set-face-foreground face (face-attribute 'default :background)))
+;;(set-face-background 'fringe (face-attribute 'default :background))

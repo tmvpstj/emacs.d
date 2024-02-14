@@ -1,12 +1,29 @@
 ;; -*- coding: utf-8; lexical-binding: t; -*-
 
+;; removes window decorations in non-daemon windows
 (when (window-system)
+    (tool-bar-mode -1)
+    (scroll-bar-mode -1)
+    (menu-bar-mode -1)
+    (tooltip-mode -1)
+  ;;(pixel-scroll-mode)
+)
+
+(defun my-frame-config (frame)
   (tool-bar-mode -1)
   (scroll-bar-mode -1)
   (menu-bar-mode -1)
   (tooltip-mode -1)
-  ;;(pixel-scroll-mode)
+  (set-face-attribute 'default nil :font "Iosevka Term-12.5")
+  (set-face-attribute 'variable-pitch nil :font "Iosevka Term-12.5")
+  ;;(remove-hook 'after-make-frame-functions #'my-frame-config)
   )
+
+;; removes window decorations and sets font for client windows
+(add-hook 'after-make-frame-functions #'my-frame-config)
+
+;; (add-hook 'after-make-frame-functions
+;;          (lambda (f) (set-face-attribute 'default :font "Iosevka Term-12.5")))
 
 (blink-cursor-mode 0)
 
@@ -62,12 +79,13 @@
  )
 
 (setq-default indent-tabs-mode nil)
+(setq-default tab-width 2)
 
 (set-charset-priority 'unicode)
 (prefer-coding-system 'utf-8-unix)
 
 (delete-selection-mode t)
-(global-display-line-numbers-mode t)
+(add-hook 'prog-mode-hook 'display-line-numbers-mode)
 (column-number-mode)
 (savehist-mode)
 
@@ -96,10 +114,10 @@
 
 (use-package fancy-compilation :config (fancy-compilation-mode))
 
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
+
 (set-face-attribute 'default nil :font "Iosevka Term-13")
 (set-face-attribute 'variable-pitch nil :font "Iosevka Term-13")
-
-(add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 (use-package doom-themes
   :config
@@ -134,3 +152,66 @@
 ;;  (face-spec-reset-face face)
 ;;(set-face-foreground face (face-attribute 'default :background)))
 ;;(set-face-background 'fringe (face-attribute 'default :background))
+
+;; org-mode stuff
+(global-set-key (kbd "C-c l") #'org-store-link)
+(global-set-key (kbd "C-c a") #'org-agenda)
+(global-set-key (kbd "C-c c") #'org-capture)
+(setq calendar-week-start-day 0)
+(setq org-agenda-files  (list "~/org/")
+      org-refile-targets '((org-agenda-files :maxlevel . 5))
+      org-refile-use-outline-path 'file
+      org-log-into-drawer t
+      org-log-done 'time
+      org-log-redeadline 'time
+      org-log-reschedule 'time
+      )
+
+;; auctex
+(use-package tex
+  :ensure auctex)
+(setq TeX-parse-self t)
+(setq-default TeX-master nil)
+(add-hook 'LaTeX-mode-hook 'visual-line-mode)
+(add-hook 'LaTeX-mode-hook 'flyspell-mode)
+(add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+(add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+(setq reftex-plug-into-AUCTeX t)
+(use-package auctex-latexmk)
+
+(require 'auctex-latexmk)
+(auctex-latexmk-setup)
+
+(use-package all-the-icons)
+
+;; dashboard
+(use-package dashboard
+  :ensure t
+  :config
+  (dashboard-setup-startup-hook))
+;; (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
+(setq dashboard-banner-logo-title "Welcome to Emacs Dashboard")
+;; (setq dashboard-startup-banner 'logo)
+(setq dashboard-center-content t)
+(setq dashboard-set-navigator t)
+(setq dashboard-set-footer nil)
+(setq dashboard-week-agenda t)
+(setq dashboard-icon-type 'all-the-icons)
+(setq dashboard-set-heading-icons t)
+(setq dashboard-set-file-icons t)
+(setq dashboard-heading-icons '((recents   . "clock")
+                                (bookmarks . "bookmark")
+                                (agenda    . "calendar")
+                                (projects  . "rocket")
+                                (registers . "database")))
+
+(add-hook 'server-after-make-frame-hook (lambda()
+    (switch-to-buffer dashboard-buffer-name)
+    (dashboard-mode)
+    (dashboard-insert-startupify-lists)
+
+    (dashboard-refresh-buffer)))
+
+;; treesitter
+(setq major-mode-remap-alist
+      '((bash-mode . bash-ts-mode)))

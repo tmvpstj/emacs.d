@@ -14,10 +14,10 @@
   (scroll-bar-mode -1)
   (menu-bar-mode -1)
   (tooltip-mode -1)
-  (set-face-attribute 'default nil :font "Iosevka Term-12.5")
-  (set-face-attribute 'variable-pitch nil :font "Iosevka Term-12.5")
+  (set-face-attribute 'default nil :font "Iosevka Term-13")
+  (set-face-attribute 'variable-pitch nil :font "Iosevka Term-13")
   ;;(remove-hook 'after-make-frame-functions #'my-frame-config)
-  )
+)
 
 ;; removes window decorations and sets font for client windows
 (add-hook 'after-make-frame-functions #'my-frame-config)
@@ -76,7 +76,7 @@
  read-minibuffer-restore-windows t
  save-some-buffers-default-predicate 'save-some-buffers-root
  kill-do-not-save-duplicates t
- )
+)
 
 (setq-default indent-tabs-mode nil)
 (setq-default tab-width 2)
@@ -85,13 +85,13 @@
 (prefer-coding-system 'utf-8-unix)
 
 (delete-selection-mode t)
-(add-hook 'prog-mode-hook 'display-line-numbers-mode)
+(add-hook 'prog-mode-hook #'display-line-numbers-mode)
 (column-number-mode)
 (savehist-mode)
 
 (require 'hl-line)
-(add-hook 'prog-mode-hook #'hl-line-mode)
-(add-hook 'text-mode-hook #'hl-line-mode)
+;; (add-hook 'prog-mode-hook #'hl-line-mode)
+;; (add-hook 'text-mode-hook #'hl-line-mode)
 
 (setq
  make-backup-files nil
@@ -135,7 +135,8 @@
   (which-key-enable-extended-define-key t)
   :config
   (which-key-mode)
-  (which-key-setup-side-window-right))
+  ;;  (which-key-setup-side-window-right))
+  )
 
 (use-package magit)
 
@@ -167,20 +168,125 @@
       org-log-reschedule 'time
       )
 
+(use-package pdf-tools)
+
 ;; auctex
-(use-package tex
-  :ensure auctex)
+(use-package latex
+  :ensure auctex
+  :hook ((LaTeX-mode . prettify-symbols-mode))
+  :bind (:map LaTeX-mode-map
+              ("C-S-e" . latex-math-from-calc))
+  :config
+  (defun latex-math-from-calc ()
+    "Evaluate `calc' on the contents of line at point."
+    (interactive)
+    (cond ((region-active-p)
+           (let* ((beg (region-beginning))
+                  (end (region-end))
+                  (string (buffer-substring-no-properties beg end)))
+             (kill-region beg end)
+             (insert (calc-eval `(,string calc-language latex
+                                          calc-prefer-frac t
+                                          calc-angle-mode rad)))))
+          (t (let ((l (thing-at-point 'line)))
+               (end-of-line 1) (kill-line 0)
+               (insert (calc-eval `(,l
+                                    calc-language latex
+                                    calc-prefer-frac t
+                                    calc-angle-mode rad))))))))
+
 (setq TeX-parse-self t)
+(setq TeX-save-query nil)
 (setq-default TeX-master nil)
 (add-hook 'LaTeX-mode-hook 'visual-line-mode)
-(add-hook 'LaTeX-mode-hook 'flyspell-mode)
+;; (add-hook 'LaTeX-mode-hook 'flyspell-mode)
 (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
 (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
 (setq reftex-plug-into-AUCTeX t)
 (use-package auctex-latexmk)
-
 (require 'auctex-latexmk)
 (auctex-latexmk-setup)
+;; (setq +latex-viewers '(pdf-tools))
+;; (setq TeX-view-program-list '((output-pdf "pdf-tools")))
+(setq TeX-view-program-selection '((output-pdf "Zathura")))
+(setq TeX-source-correlate-mode 'synctex)
+
+;; CDLatex settings
+(use-package cdlatex
+  :ensure t
+  :hook (LaTeX-mode . turn-on-cdlatex)
+  :bind (:map cdlatex-mode-map
+              ("<tab>" . cdlatex-tab)))
+
+(require 'lazytab "/home/lain/.emacs.d/lazytab.el")
+
+(add-to-list 'cdlatex-command-alist '("bmat" "Insert bmatrix env"
+                                       "\\begin{bmatrix} ? \\end{bmatrix}"
+                                       lazytab-position-cursor-and-edit
+                                       nil nil t))
+
+;; Yasnippet settings
+(use-package yasnippet
+  :ensure t
+  :hook ((LaTeX-mode . yas-minor-mode)
+         (post-self-insert . my/yas-try-expanding-auto-snippets))
+  :config
+  (use-package warnings
+    :config
+    (cl-pushnew '(yasnippet backquote-change)
+                warning-suppress-types
+                :test 'equal))
+
+  (setq yas-trigger-in-field t)
+  (setq yas-snippet-dirs
+        '("~/.emacs.d/snippets"))
+  (setq yas-indent-line 'auto)
+
+  (defun my/yas-try-expanding-auto-snippets ()
+    (when (and (boundp 'yas-minor-mode) yas-minor-mode)
+      (let ((yas-buffer-local-condition ''(require-snippet-condition . auto)))
+        (yas-expand)))))
+
+;; Try after every insertion
+(add-hook 'post-self-insert-hook #'my/yas-try-expanding-auto-snippets)
+
+;; Allows cdlatex to use tab inside yasnippet fields
+(use-package cdlatex
+  :hook ((cdlatex-tab . yas-expand)
+         (cdlatex-tab . cdlatex-in-yas-field))
+  :config
+  (use-package yasnippet
+    :bind (:map yas-keymap
+           ("<tab>" . yas-next-field-or-cdlatex)
+           ("TAB" . yas-next-field-or-cdlatex))
+    :config
+    (defun cdlatex-in-yas-field ()
+      ;; Check if we're at the end of the Yas field
+      (when-let* ((_ (overlayp yas--active-field-overlay))
+                  (end (overlay-end yas--active-field-overlay)))
+        (if (>= (point) end)
+            ;; Call yas-next-field if cdlatex can't expand here
+            (let ((s (thing-at-point 'sexp)))
+              (unless (and s (assoc (substring-no-properties s)
+                                    cdlatex-command-alist-comb))
+                (yas-next-field-or-maybe-expand)
+                t))
+          ;; otherwise expand and jump to the correct location
+          (let (cdlatex-tab-hook minp)
+            (setq minp
+                  (min (save-excursion (cdlatex-tab)
+                                       (point))
+                       (overlay-end yas--active-field-overlay)))
+            (goto-char minp) t))))
+
+    (defun yas-next-field-or-cdlatex nil
+      (interactive)
+      "Jump to the next Yas field correctly with cdlatex active."
+      (if
+          (or (bound-and-true-p cdlatex-mode)
+              (bound-and-true-p org-cdlatex-mode))
+          (cdlatex-tab)
+        (yas-next-field-or-maybe-expand)))))
 
 (use-package all-the-icons)
 
@@ -213,5 +319,26 @@
     (dashboard-refresh-buffer)))
 
 ;; treesitter
-(setq major-mode-remap-alist
-      '((bash-mode . bash-ts-mode)))
+;;(setq major-mode-remap-alist
+;;    '((bash-mode . bash-ts-mode)))
+
+;; evil mode
+;; (use-package evil)
+;; (require 'evil)
+(evil-mode 0)
+;; (evil-commentary-mode)
+(put 'downcase-region 'disabled nil)
+
+(defun my-toggle-margins ()
+"Set margins in current buffer."
+(interactive)
+  (if (or (> left-margin-width 0) (> right-margin-width 0))
+    (progn
+      (setq left-margin-width 0)
+      (setq right-margin-width 0)
+      (set-window-buffer (selected-window) (current-buffer)))
+    (setq left-margin-width 26)
+    (setq right-margin-width 26)
+    (set-window-buffer (selected-window) (current-buffer))))
+
+(global-set-key [f5] 'my-toggle-margins)

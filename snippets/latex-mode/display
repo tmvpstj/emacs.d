@@ -1,0 +1,8 @@
+# name: display math
+# key: dm
+# condition: (and (not (texmathp)) (quote auto))
+# group: math
+# --
+\[
+`(save-excursion (previous-line)(make-string (current-indentation) ?\s))`$1
+\] $0

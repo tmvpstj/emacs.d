@@ -202,6 +202,7 @@
 ;; (add-hook 'LaTeX-mode-hook 'flyspell-mode)
 (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
 (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+(setq LaTeX-indent-item 0)
 (setq reftex-plug-into-AUCTeX t)
 (use-package auctex-latexmk)
 (require 'auctex-latexmk)

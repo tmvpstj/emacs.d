@@ -22,6 +22,9 @@
 ;; removes window decorations and sets font for client windows
 (add-hook 'after-make-frame-functions #'my-frame-config)
 
+(set-face-attribute 'default nil :font "Iosevka Term-13")
+(set-face-attribute 'variable-pitch nil :font "Iosevka Term-13")
+
 ;; (add-hook 'after-make-frame-functions
 ;;          (lambda (f) (set-face-attribute 'default :font "Iosevka Term-12.5")))
 
@@ -116,9 +119,6 @@
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
-(set-face-attribute 'default nil :font "Iosevka Term-13")
-(set-face-attribute 'variable-pitch nil :font "Iosevka Term-13")
-
 (use-package doom-themes
   :config
   (let ((chosen-theme 'doom-opera-light))
@@ -140,12 +140,17 @@
 
 (use-package magit)
 
+(fido-mode)
+
 ;; (use-package spacious-padding)
 ;; (spacious-padding-mode)
 
 (modify-all-frames-parameters
   '((internal-border-width . 50)
-  (right-divider-width . 12)))
+    (right-divider-width . 12)))
+
+;; reduce scale factor for C-x C-+/-
+(setq text-scale-mode-step 1.1)
 
 ;;(dolist (face '(window-divider
 ;;                window-divider-first-pixel
@@ -167,6 +172,7 @@
       org-log-redeadline 'time
       org-log-reschedule 'time
       )
+(setq org-preview-latex-default-process 'dvisvgm)
 
 (use-package pdf-tools)
 
@@ -207,10 +213,17 @@
 (use-package auctex-latexmk)
 (require 'auctex-latexmk)
 (auctex-latexmk-setup)
-;; (setq +latex-viewers '(pdf-tools))
+(setq auctex-latexmk-inherit-TeX-PDF-mode t)
 ;; (setq TeX-view-program-list '((output-pdf "pdf-tools")))
 (setq TeX-view-program-selection '((output-pdf "Zathura")))
 (setq TeX-source-correlate-mode 'synctex)
+
+(use-package latex-change-env
+  :after latex
+  :bind (:map LaTeX-mode-map ("C-c r" . latex-change-env))
+  :custom
+  (latex-change-env-math-display '("\\[" . "\\]"))
+  (latex-change-env-math-inline  '("$"   . "$")))
 
 ;; CDLatex settings
 (use-package cdlatex
@@ -230,6 +243,7 @@
 (use-package yasnippet
   :ensure t
   :hook ((LaTeX-mode . yas-minor-mode)
+         (LaTeX-mode . yas-reload-all)
          (post-self-insert . my/yas-try-expanding-auto-snippets))
   :config
   (use-package warnings

@@ -1,0 +1,6 @@
+# name: bigcup
+# key: uni
+# condition: (and (texmathp) 'auto)
+# group: math
+# --
+\\bigcup_{$1}^{$2} $0

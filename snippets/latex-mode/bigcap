@@ -1,0 +1,6 @@
+# name: bigcap
+# key: ins
+# condition: (and (texmathp) 'auto)
+# group: math
+# --
+\\bigcap_{$1}^{$2} $0

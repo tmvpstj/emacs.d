@@ -30,6 +30,8 @@
 
 (blink-cursor-mode 0)
 
+(add-to-list 'load-path "~/.emacs.d/lisp")
+
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (add-to-list 'package-archives '("ublt" . "https://elpa.ubolonton.org/packages/") t)
@@ -112,8 +114,13 @@
 (bind-key "C-c q" #'fill-paragraph)
 (bind-key "C-c Q" #'set-fill-column)
 
+(pixel-scroll-precision-mode)
+(setq pixel-scroll-precision-large-scroll-height 20.0)
 (setq mouse-wheel-tilt-scroll t)
 (setq-default truncate-lines t)
+(setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
+(setq mouse-wheel-progressive-speed nil)
+(setq mouse-wheel-follow-mouse 't)
 
 (use-package fancy-compilation :config (fancy-compilation-mode))
 
@@ -218,12 +225,41 @@
 (setq TeX-view-program-selection '((output-pdf "Zathura")))
 (setq TeX-source-correlate-mode 'synctex)
 
+(add-hook 'LaTeX-mode-hook
+          (defun preview-smaller-previews ()
+            (setq preview-scale-function
+                  (lambda () (* 0.70
+                           (funcall (preview-scale-from-face)))))))
+
+
 (use-package latex-change-env
   :after latex
   :bind (:map LaTeX-mode-map ("C-c r" . latex-change-env))
   :custom
   (latex-change-env-math-display '("\\[" . "\\]"))
   (latex-change-env-math-inline  '("$"   . "$")))
+
+;; math-delimiters from oantolin/math-delimiters on github
+(autoload 'math-delimiters-insert "math-delimiters")
+
+;; enable $ mapping for math-delimiters in org and tex mode buffers
+(with-eval-after-load 'org
+  (define-key org-mode-map "$" #'math-delimiters-insert))
+
+;; applies to all tex buffers, not just LaTeX!
+(with-eval-after-load 'tex
+  (define-key TeX-mode-map "$" #'math-delimiters-insert))
+
+;; unbind cdlatex's $ mapping
+(with-eval-after-load 'cdlatex
+  (define-key cdlatex-mode-map "$" nil))
+
+(setq math-delimiters-inline '("$" . "$"))
+
+;; insert newlines before and after display math, rather than placing everything on one line
+(setq math-delimiters-compressed-display-math nil)
+
+(setq
 
 ;; CDLatex settings
 (use-package cdlatex
@@ -232,12 +268,49 @@
   :bind (:map cdlatex-mode-map
               ("<tab>" . cdlatex-tab)))
 
-(require 'lazytab "/home/lain/.emacs.d/lazytab.el")
+(require 'lazytab "~/.emacs.d/lisp/lazytab.el")
+
+(setq cdlatex-env-alist
+      '(("theoremd" "\\begin{theoremd}\nAUTOLABEL\n?\n\\end{theoremd}\n" nil)
+        ("theorem" "\\begin{theorem}\nAUTOLABEL\n?\n\\end{theorem}\n" nil)
+        ("definitiond" "\\begin{definitiond}\nAUTOLABEL\n?\n\\end{definitiond}\n" nil)
+        ("definition" "\\begin{definition}\nAUTOLABEL\n?\n\\end{definition}\n" nil)
+        ("proof" "\\begin{proof}\nAUTOLABEL\n?\n\\end{proof}\n" nil)
+        ("eg" "\\begin{eg}\nAUTOLABEL\n?\n\\end{eg}\n" nil)
+        ("lemma" "\\begin{lemma}\nAUTOLABEL\n?\n\\end{lemma}\n" nil)
+        ("claim" "\\begin{clm}\nAUTOLABEL\n?\n\\end{clm}\n" nil)
+        ("remark" "\\begin{remark}\nAUTOLABEL\n?\n\\end{remark}\n" nil)))
+
+(setq cdlatex-command-alist
+      '(("thm" "Insert theoremd environment"  "" cdlatex-environment ("theoremd") t nil)
+        ("defn" "Insert definitiond environment"  "" cdlatex-environment ("definitiond") t nil)
+        ("prf" "Insert proof environment"  "" cdlatex-environment ("proof") t nil)
+        ("eg" "Insert eg environment"  "" cdlatex-environment ("eg") t nil)
+        ("lem" "Insert lemma environment"  "" cdlatex-environment ("lemma") t nil)
+        ("clm" "Insert claim environment"  "" cdlatex-environment ("claim") t nil)
+        ("rmk" "Insert remark environment"  "" cdlatex-environment ("remark") t nil)
+        ("sum" "Insert summation"  "\\sum_{?}^{}" cdlatex-position-cursor nil nil t)
+        ("cases" "Insert cases" "\\begin{cases} ? \\end{cases}" cdlatex-position-cursor nil nil t)))
 
 (add-to-list 'cdlatex-command-alist '("bmat" "Insert bmatrix env"
                                        "\\begin{bmatrix} ? \\end{bmatrix}"
                                        lazytab-position-cursor-and-edit
                                        nil nil t))
+
+(add-to-list 'cdlatex-command-alist '("pmat" "Insert pmatrix env"
+                                       "\\begin{pmatrix} ? \\end{pmatrix}"
+                                       lazytab-position-cursor-and-edit
+                                       nil nil t))
+
+(add-to-list 'cdlatex-command-alist '("tbl" "Insert table"
+                                       "\\begin{table}\n ? \\end{table}\n"
+                                       lazytab-position-cursor-and-edit
+                                       nil nil t))
+
+(setq cdlatex-math-symbol-alist
+      '((?0 ("\\nil"))
+        (?B ("\\sup{?}"))
+        (?C ("\\inf{?}"))))
 
 ;; Yasnippet settings
 (use-package yasnippet
@@ -337,11 +410,6 @@
 ;;(setq major-mode-remap-alist
 ;;    '((bash-mode . bash-ts-mode)))
 
-;; evil mode
-;; (use-package evil)
-;; (require 'evil)
-(evil-mode 0)
-;; (evil-commentary-mode)
 (put 'downcase-region 'disabled nil)
 
 (defun my-toggle-margins ()

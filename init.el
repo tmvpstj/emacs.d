@@ -1,40 +1,11 @@
 ;; -*- coding: utf-8; lexical-binding: t; -*-
 
-;; removes window decorations in non-daemon windows
-(when (window-system)
-    (tool-bar-mode -1)
-    (scroll-bar-mode -1)
-    (menu-bar-mode -1)
-    (tooltip-mode -1)
-  ;;(pixel-scroll-mode)
-)
-
-(defun my-frame-config (frame)
-  (tool-bar-mode -1)
-  (scroll-bar-mode -1)
-  (menu-bar-mode -1)
-  (tooltip-mode -1)
-  (set-face-attribute 'default nil :font "Iosevka Term-13")
-  (set-face-attribute 'variable-pitch nil :font "Iosevka Term-13")
-  ;;(remove-hook 'after-make-frame-functions #'my-frame-config)
-)
-
-;; removes window decorations and sets font for client windows
-(add-hook 'after-make-frame-functions #'my-frame-config)
-
-(set-face-attribute 'default nil :font "Iosevka Term-13")
-(set-face-attribute 'variable-pitch nil :font "Iosevka Term-13")
-
-;; (add-hook 'after-make-frame-functions
-;;          (lambda (f) (set-face-attribute 'default :font "Iosevka Term-12.5")))
-
-(blink-cursor-mode 0)
-
 (add-to-list 'load-path "~/.emacs.d/lisp")
 
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (add-to-list 'package-archives '("ublt" . "https://elpa.ubolonton.org/packages/") t)
+(add-to-list 'package-archives '("elpa" . "https://elpa.gnu.org/packages/") t)
 (setq package-native-compile t)
 (setq use-package-always-ensure t)
 (unless (package-installed-p 'use-package)
@@ -55,6 +26,109 @@
 (use-package use-package-ensure-system-package)
 (use-package try)
 
+;; removes window decorations in non-daemon windows
+(when (window-system)
+    (tool-bar-mode -1)
+    (scroll-bar-mode -1)
+    (menu-bar-mode -1)
+    (tooltip-mode -1)
+    (set-fringe-mode 0)
+)
+
+(defun my-frame-config (frame)
+  (tool-bar-mode -1)
+  (scroll-bar-mode -1)
+  (menu-bar-mode -1)
+  (tooltip-mode -1)
+  (set-fringe-mode 0)
+  (set-face-attribute 'default nil :font "Sarasa Mono CL" :height 130)
+  (set-face-attribute 'fixed-pitch nil :font "Sarasa Mono CL" :height 130)
+  (set-face-attribute 'variable-pitch nil :font "Sarasa Mono CL" :height 130)
+  ;;(remove-hook 'after-make-frame-functions #'my-frame-config)
+)
+
+;; removes window decorations and sets font for client windows (necessary when running emacs as a daemon)
+(add-hook 'after-make-frame-functions #'my-frame-config)
+
+(set-face-attribute 'default nil :font "Sarasa Mono CL" :height 130)
+(set-face-attribute 'variable-pitch nil :font "Sarasa Mono CL" :height 130)
+
+(use-package spacious-padding
+  :config
+  (setq spacious-padding-widths
+        '( :right-divider-width 30
+           :internal-border-width 15
+           :tab-width 4
+           :fringe-width 8))
+  (setq spacious-padding-subtle-mode-line nil))
+
+(spacious-padding-mode)
+
+;; show time in modeline
+(use-package time
+  :ensure nil
+  :defer 2
+  :custom
+  (display-time-default-load-average nil)
+  (display-time-24hr-format nil)
+  ;; (display-time-day-and-date t)
+  :config
+  (display-time-mode 1))
+
+;; Shorten the modeline if it is wider than the window
+(setopt mode-line-compact 'long)
+
+;; (modify-all-frames-parameters
+;;   '((internal-border-width . 20)
+;;     (right-divider-width . 4)))
+
+;; (add-hook 'after-make-frame-functions
+;;          (lambda (f) (set-face-attribute 'default :font "Iosevka Term-12.5")))
+
+(blink-cursor-mode 0)
+(setopt cursor-type '(hbar . 3)
+        cursor-in-non-selected-windows nil)
+
+;; (use-package doom-themes
+;;   :config
+;;   (let ((chosen-theme 'doom-opera-light))
+;;     (doom-themes-visual-bell-config)
+;;     (load-theme chosen-theme)))
+
+;; (use-package ef-themes
+;;   :config
+;;   (load-theme 'ef-kassio t))
+
+;; (use-package modus-themes
+;;   :ensure nil
+;;   :custom
+;;   (modus-themes-subtle-line-numbers nil)
+;;   (modus-themes-org-blocks 'gray-background)
+;;   (modus-themes-mode-line '(borderless))
+;;   (modus-themes-scale-headings t)
+;;   (modus-themes-fringes nil)
+;;   :init
+;;   (load-theme 'modus-operandi t))
+
+(use-package kaolin-themes
+  :config
+  (load-theme 'kaolin-light t))
+
+;; Broken package
+;; (use-package mindre-theme
+;;     :ensure t
+;;     :custom
+;;     (mindre-use-more-bold nil)
+;;     (mindre-use-faded-lisp-parens t);;
+;;     :config
+;;     (load-theme 'mindre t))
+
+;; Make the mode line nicer (worse?)
+;; (use-package mood-line)
+
+;; (mood-line-mode)
+
+;; Override default behaviors
 (setq
  inhibit-startup-screen nil
  initial-scratch-message nil
@@ -83,8 +157,23 @@
  kill-do-not-save-duplicates t
 )
 
-(setq-default indent-tabs-mode nil)
-(setq-default tab-width 2)
+(put 'upcase-region 'disabled nil)
+
+;; Switch focus to help window when it appears
+(setopt help-window-select t)
+
+;; Include path in buffer name when multiple files of the same name are open
+(setopt uniquify-buffer-name-style 'forward)
+
+;; Show recently opened files in menus
+(recentf-mode)
+
+;; Show count of matches in isearch
+(setopt isearch-lazy-count t)
+
+(setopt indent-tabs-mode nil
+        tab-width 2
+        fill-columns 80)
 
 (set-charset-priority 'unicode)
 (prefer-coding-system 'utf-8-unix)
@@ -94,9 +183,15 @@
 (column-number-mode)
 (savehist-mode)
 
+;; Don't wrap lines
+(setq-default truncate-lines t)
+
+;; Insert closing brackets automatically
+(electric-pair-mode)
+
 (require 'hl-line)
-;; (add-hook 'prog-mode-hook #'hl-line-mode)
-;; (add-hook 'text-mode-hook #'hl-line-mode)
+(add-hook 'prog-mode-hook #'hl-line-mode)
+(add-hook 'text-mode-hook #'hl-line-mode)
 
 (setq
  make-backup-files nil
@@ -117,24 +212,18 @@
 (pixel-scroll-precision-mode)
 (setq pixel-scroll-precision-large-scroll-height 20.0)
 (setq mouse-wheel-tilt-scroll t)
-(setq-default truncate-lines t)
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
 (setq mouse-wheel-progressive-speed nil)
 (setq mouse-wheel-follow-mouse 't)
+
+;; Get rid of annoying minimize chord
+(keymap-global-unset "C-z")
+(keymap-global-unset "C-x C-z")
 
 (use-package fancy-compilation :config (fancy-compilation-mode))
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
-(use-package doom-themes
-  :config
-  (let ((chosen-theme 'doom-opera-light))
-    (doom-themes-visual-bell-config)
-    (load-theme chosen-theme)))
-
-(use-package mood-line)
-
-(mood-line-mode)
 
 (use-package which-key
   :diminish
@@ -147,14 +236,27 @@
 
 (use-package magit)
 
-(fido-mode)
+(setopt read-buffer-completion-ignore-case t
+        read-file-name-completion-ignore-case t
+        completion-ignore-case t
+        completion-styles '(basic substring initials flex)
+        completion-category-defaults nil
+        completion-category-overrides '((file (styles . (basic partial-completion)))))
 
-;; (use-package spacious-padding)
-;; (spacious-padding-mode)
-
-(modify-all-frames-parameters
-  '((internal-border-width . 50)
-    (right-divider-width . 12)))
+(use-package icomplete
+  :ensure nil
+  :defer 1
+  :bind (:map icomplete-fido-mode-map
+         ("<tab>" . icomplete-force-complete)
+         ("RET" . icomplete-force-complete-and-exit))
+  :hook (icomplete-minibuffer-setup
+         . (lambda ()
+             (setq-local truncate-lines t
+                         completion-styles '(basic substring initials flex))))
+  :custom-face (icomplete-selected-match ((t (:extend t))))
+  ;; :config
+  ;; (fido-vertical-mode 1))
+  )
 
 ;; reduce scale factor for C-x C-+/-
 (setq text-scale-mode-step 1.1)
@@ -165,6 +267,210 @@
 ;;  (face-spec-reset-face face)
 ;;(set-face-foreground face (face-attribute 'default :background)))
 ;;(set-face-background 'fringe (face-attribute 'default :background))
+
+;; previews in dired
+(use-package dired-preview
+  :config
+  (setq dired-preview-delay 0.7)
+  (setq dired-preview-max-size (expt 2 20))
+  (setq dired-preview-ignored-extensions-regexp
+        (concat "\\."
+                "\\(mkv\\|webm\\|mp4\\|mp3\\|ogg\\|m4a"
+                "\\|gz\\|zst\\|tar\\|xz\\|rar\\|zip"
+                "\\|iso\\|epub\\|pdf\\)")))
+
+;; Ibuffer
+(use-package ibuffer
+  :ensure nil
+  :bind (([remap list-buffers] . ibuffer)
+         ("C-c b" . ibuffer))
+  :hook (ibuffer-mode . ibuffer-auto-mode)
+  :custom
+  (ibuffer-formats
+   '((mark modified read-only locked " "
+           (name 20 20 :left :elide)
+           " "
+           (size-h 11 -1 :right)
+           " "
+           (mode 16 16 :left :elide)
+           " " filename-and-process)
+     (mark " "
+           (name 16 -1)
+           " " filename)))
+
+  :config
+  (defun crz/human-readable-file-sizes-to-bytes (string)
+    "Convert a human-readable file size into bytes."
+    (cond
+     ((string-suffix-p "G" string t)
+      (* 1000000000 (string-to-number (substring string 0 (- (length string) 1)))))
+     ((string-suffix-p "M" string t)
+      (* 1000000 (string-to-number (substring string 0 (- (length string) 1)))))
+     ((string-suffix-p "K" string t)
+      (* 1000 (string-to-number (substring string 0 (- (length string) 1)))))
+     (t
+      (string-to-number (substring string 0 (- (length string) 1))))))
+
+  (defun crz/bytes-to-human-readable-file-sizes (bytes)
+    "Convert number of bytes to human-readable file size."
+    (cond
+     ((> bytes 1000000000) (format "%10.1fG" (/ bytes 1000000000.0)))
+     ((> bytes 100000000) (format "%10.0fM" (/ bytes 1000000.0)))
+     ((> bytes 1000000) (format "%10.1fM" (/ bytes 1000000.0)))
+     ((> bytes 100000) (format "%10.0fK" (/ bytes 1000.0)))
+     ((> bytes 1000) (format "%10.1fK" (/ bytes 1000.0)))
+     (t (format "%10d" bytes))))
+
+  (define-ibuffer-column size-h
+    (:name "Size"
+           :inline t
+           :summarizer
+           (lambda (column-strings)
+             (let ((total 0))
+               (dolist (string column-strings)
+                 (setq total
+                       (+ (float (crz/human-readable-file-sizes-to-bytes string))
+                          total)))
+               (crz/bytes-to-human-readable-file-sizes total))))
+    (crz/bytes-to-human-readable-file-sizes (buffer-size))))
+
+;; Visual undo tree
+(use-package vundo
+  :config
+  (setq vundo-glyph-alist vundo-unicode-symbols))
+
+;; Improve window switching
+(use-package ace-window
+  :bind ("M-o" . ace-window)
+  :custom
+  (aw-scope 'frame)
+  (aw-ignore-current t))
+
+;; Better handling of popup windows
+(use-package popper
+  :ensure t ; or :straight t
+  :bind (("C-`"   . popper-toggle)
+         ("M-`"   . popper-cycle)
+         ("C-M-`" . popper-toggle-type))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "Output\\*$"
+          "\\*Async Shell Command\\*"))
+  :config
+  (popper-mode 1)
+  (popper-echo-mode 1))
+
+;; Show most recent command in modeline
+;; (use-package keycast)
+;; (keycast-mode-line-mode)
+
+(use-package vterm
+    :ensure t)
+
+(use-package counsel
+  :custom
+  (setq ivy-use-virtual-buffers t)
+  (setq ivy-count-format "(%d/%d) ")
+
+  :config
+  (ivy-mode 1))
+
+;; Ivy/counsel/swiper default keybinds
+(global-set-key (kbd "C-s") 'swiper-isearch)
+(global-set-key (kbd "M-x") 'counsel-M-x)
+(global-set-key (kbd "C-x C-f") 'counsel-find-file)
+(global-set-key (kbd "M-y") 'counsel-yank-pop)
+(global-set-key (kbd "<f1> f") 'counsel-describe-function)
+(global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+(global-set-key (kbd "<f1> l") 'counsel-find-library)
+(global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
+(global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+(global-set-key (kbd "<f2> j") 'counsel-set-variable)
+(global-set-key (kbd "C-x b") 'ivy-switch-buffer)
+
+;; Avy keybinds
+(avy-setup-default)
+(global-set-key (kbd "C-c C-j") 'avy-resume)
+(global-set-key (kbd "M-g M-g") 'avy-goto-line)
+(global-set-key (kbd "M-g w") 'avy-goto-word-1)
+(global-set-key (kbd "M-g e") 'avy-goto-word-0)
+(global-set-key (kbd "C-:") 'avy-goto-char)
+(global-set-key (kbd "C-j") 'avy-goto-char-timer)
+
+;; Free up "k" for avy-dispatch, add "n" and "v" in its place
+(setq avy-keys '(?a ?s ?d ?f ?g ?h ?j ?l ?n ?v))
+(define-key isearch-mode-map (kbd "C-'") 'avy-isearch)
+
+;; Functions stolen from karthinks' blog
+(defun avy-action-kill-whole-line (pt)
+  (save-excursion
+    (goto-char pt)
+    (kill-whole-line))
+  (select-window
+   (cdr
+    (ring-ref avy-ring 0)))
+t)
+
+(defun avy-action-copy-whole-line (pt)
+  (save-excursion
+    (goto-char pt)
+    (cl-destructuring-bind (start . end)
+        (bounds-of-thing-at-point 'line)
+      (copy-region-as-kill start end)))
+  (select-window
+   (cdr
+    (ring-ref avy-ring 0)))
+nt)
+
+(defun avy-action-yank-whole-line (pt)
+  (avy-action-copy-whole-line pt)
+  (save-excursion (yank))
+t)
+
+(defun avy-action-teleport-whole-line (pt)
+    (avy-action-kill-whole-line pt)
+(save-excursion (yank)) t)
+
+(defun avy-action-mark-to-char (pt)
+  (activate-mark)
+  (goto-char pt))
+
+(setf (alist-get ?k avy-dispatch-alist) 'avy-action-kill-stay
+      (alist-get ?K avy-dispatch-alist) 'avy-action-kill-whole-line)
+
+(setf (alist-get ?y avy-dispatch-alist) 'avy-action-yank
+      (alist-get ?w avy-dispatch-alist) 'avy-action-copy
+      (alist-get ?W avy-dispatch-alist) 'avy-action-copy-whole-line
+      (alist-get ?Y avy-dispatch-alist) 'avy-action-yank-whole-line)
+
+(setf (alist-get ?t avy-dispatch-alist) 'avy-action-teleport
+      (alist-get ?T avy-dispatch-alist) 'avy-action-teleport-whole-line)
+
+(setf (alist-get ?  avy-dispatch-alist) 'avy-action-mark-to-char)
+
+(defun isearch-forward-other-window (prefix)
+    "Function to isearch-forward in other-window."
+    (interactive "P")
+    (unless (one-window-p)
+      (save-excursion
+        (let ((next (if prefix -1 1)))
+          (other-window next)
+          (isearch-forward)
+          (other-window (- next))))))
+
+(defun isearch-backward-other-window (prefix)
+  "Function to isearch-backward in other-window."
+  (interactive "P")
+  (unless (one-window-p)
+    (save-excursion
+      (let ((next (if prefix 1 -1)))
+        (other-window next)
+        (isearch-backward)
+        (other-window (- next))))))
+
+(define-key global-map (kbd "C-M-s") 'isearch-forward-other-window)
+(define-key global-map (kbd "C-M-r") 'isearch-backward-other-window)
 
 ;; org-mode stuff
 (global-set-key (kbd "C-c l") #'org-store-link)
@@ -179,9 +485,64 @@
       org-log-redeadline 'time
       org-log-reschedule 'time
       )
+(setq
+ ;; Edit settings
+ org-auto-align-tags nil
+ org-tags-column 0
+ org-catch-invisible-edits 'show-and-error
+ org-special-ctrl-a/e t
+ org-insert-heading-respect-content t
+
+ ;; Org styling, hide markup etc.
+ org-hide-emphasis-markers t
+ org-pretty-entities t
+ org-ellipsis "…"
+
+ ;; Agenda styling
+ org-agenda-tags-column 0
+ org-agenda-block-separator ?─)
+
 (setq org-preview-latex-default-process 'dvisvgm)
 
-(use-package pdf-tools)
+;; Org-modern
+(use-package org-modern
+  :custom
+  (setq
+ ;; Edit settings
+ org-auto-align-tags nil
+ org-tags-column 0
+ org-catch-invisible-edits 'show-and-error
+ org-special-ctrl-a/e t
+ org-insert-heading-respect-content t
+
+ ;; Org styling, hide markup etc.
+ org-hide-emphasis-markers t
+ org-pretty-entities t
+ org-ellipsis "…"
+
+ ;; Agenda styling
+ org-agenda-tags-column 0
+ org-agenda-block-separator ?─
+ org-agenda-time-grid
+ '((daily today require-timed)
+   (800 1000 1200 1400 1600 1800 2000)
+   " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
+ org-agenda-current-time-string
+ "◀── now ─────────────────────────────────────────────────")
+  (add-hook 'org-mode-hook #'org-modern-mode)
+  (add-hook 'org-agenda-finalize-hook #'org-modern-agenda))
+
+
+(use-package pdf-tools
+  :config
+
+  ;; Bootstrap pdf-tools
+  (pdf-tools-install)
+  (setq-default pdf-view-display-size 'fit-width)
+
+  ;; Use isearch in pdfs
+  (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
+  (setq pdf-view-use-scaling t))
 
 ;; auctex
 (use-package latex
@@ -215,13 +576,14 @@
 ;; (add-hook 'LaTeX-mode-hook 'flyspell-mode)
 (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
 (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+(add-hook 'LaTeX-mode-hook 'auto-fill-mode)
 (setq LaTeX-indent-item 0)
 (setq reftex-plug-into-AUCTeX t)
 (use-package auctex-latexmk)
 (require 'auctex-latexmk)
 (auctex-latexmk-setup)
 (setq auctex-latexmk-inherit-TeX-PDF-mode t)
-;; (setq TeX-view-program-list '((output-pdf "pdf-tools")))
+;; (setq TeX-view-program-selection '((output-pdf "PDF Tools")))
 (setq TeX-view-program-selection '((output-pdf "Zathura")))
 (setq TeX-source-correlate-mode 'synctex)
 
@@ -259,8 +621,6 @@
 ;; insert newlines before and after display math, rather than placing everything on one line
 (setq math-delimiters-compressed-display-math nil)
 
-(setq
-
 ;; CDLatex settings
 (use-package cdlatex
   :ensure t
@@ -278,7 +638,7 @@
         ("proof" "\\begin{proof}\nAUTOLABEL\n?\n\\end{proof}\n" nil)
         ("eg" "\\begin{eg}\nAUTOLABEL\n?\n\\end{eg}\n" nil)
         ("lemma" "\\begin{lemma}\nAUTOLABEL\n?\n\\end{lemma}\n" nil)
-        ("claim" "\\begin{clm}\nAUTOLABEL\n?\n\\end{clm}\n" nil)
+        ("claim" "\\begin{claim}\nAUTOLABEL\n?\n\\end{claim}\n" nil)
         ("remark" "\\begin{remark}\nAUTOLABEL\n?\n\\end{remark}\n" nil)))
 
 (setq cdlatex-command-alist
@@ -290,7 +650,8 @@
         ("clm" "Insert claim environment"  "" cdlatex-environment ("claim") t nil)
         ("rmk" "Insert remark environment"  "" cdlatex-environment ("remark") t nil)
         ("sum" "Insert summation"  "\\sum_{?}^{}" cdlatex-position-cursor nil nil t)
-        ("cases" "Insert cases" "\\begin{cases} ? \\end{cases}" cdlatex-position-cursor nil nil t)))
+        ("cases" "Insert cases" "\\begin{cases} ? \\end{cases}" cdlatex-position-cursor nil nil t)
+        ("itl" "Insert item with custom bullet" "\\item[?]" cdlatex-position-cursor nil t nil)))
 
 (add-to-list 'cdlatex-command-alist '("bmat" "Insert bmatrix env"
                                        "\\begin{bmatrix} ? \\end{bmatrix}"
@@ -375,6 +736,17 @@
               (bound-and-true-p org-cdlatex-mode))
           (cdlatex-tab)
         (yas-next-field-or-maybe-expand)))))
+
+;; stolen from https://superuser.com/questions/125027/word-count-for-latex-within-emacs
+(defun latex-word-count ()
+   (interactive)
+    (let* ((this-file (buffer-file-name))
+           (word-count
+            (with-output-to-string
+              (with-current-buffer standard-output
+                (call-process "texcount" nil t nil "-brief" this-file)))))
+      (string-match "\n$" word-count)
+      (message (replace-match "" nil nil word-count))))
 
 (use-package all-the-icons)
 

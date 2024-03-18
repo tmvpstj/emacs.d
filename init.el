@@ -200,6 +200,8 @@
 (put 'narrow-to-region 'disabled nil)
 (put 'set-goal-column 'disabled nil)
 
+(setq visual-line-mode nil)
+
 (defun open-next-line (arg)
   "Move to the next line and then opens a line."
   (interactive "p")
@@ -670,9 +672,16 @@ t)
 (require 'auctex-latexmk)
 (auctex-latexmk-setup)
 (setq auctex-latexmk-inherit-TeX-PDF-mode t)
-;; (setq TeX-view-program-selection '((output-pdf "PDF Tools")))
-(setq TeX-view-program-selection '((output-pdf "Zathura")))
+(setq TeX-view-program-selection '((output-pdf "PDF Tools")))
+;; (setq TeX-view-program-selection '((output-pdf "Zathura")))
 (setq TeX-source-correlate-mode 'synctex)
+(add-hook 'TeX-after-compilation-finished-functions
+          #'TeX-revert-document-buffer)
+
+(use-package latex
+  :ensure nil
+  :bind (
+         :map LaTeX-mode-map ("C-j" . avy-goto-char-timer)))
 
 (add-hook 'LaTeX-mode-hook
           (defun preview-smaller-previews ()

@@ -16,7 +16,7 @@
 (eval-when-compile
   (require 'use-package))
 
-(setq gc-cons-threshold 100000000)
+(setq gc-cons-threshold (* 50 1000 1000))
 (setq max-spedcl-size 5000)
 
 (use-package exec-path-from-shell
@@ -60,9 +60,12 @@
            :internal-border-width 15
            :tab-width 4
            :fringe-width 8))
-  (setq spacious-padding-subtle-mode-line nil))
-
-(spacious-padding-mode)
+  (setq spacious-padding-subtle-mode-line nil)
+  ;; Enable spacious padding mode right away for emacs launched in graphical
+  ;; mode, but only activate the mode for client frames when a frame is made
+  (if (window-system)
+      (spacious-padding-mode 1)
+    (add-hook 'after-make-frame-functions #'spacious-padding-mode)))
 
 ;; show time in modeline
 (use-package time
@@ -99,46 +102,57 @@
 ;;   :config
 ;;   (load-theme 'ef-kassio t))
 
-;; (use-package modus-themes
-;;   :ensure nil
-;;   :custom
-;;   (modus-themes-subtle-line-numbers nil)
-;;   (modus-themes-org-blocks 'gray-background)
-;;   (modus-themes-mode-line '(borderless))
-;;   (modus-themes-scale-headings t)
-;;   (modus-themes-fringes nil)
-;;   :init
-;;   (load-theme 'modus-operandi t))
+(use-package modus-themes
+  :ensure nil
+  :custom
+  (modus-themes-subtle-line-numbers nil)
+  (modus-themes-org-blocks 'gray-background)
+  (modus-themes-mode-line '(borderless))
+  (modus-themes-scale-headings t)
+  (modus-themes-fringes nil)
+  :init
+  (load-theme 'modus-operandi t))
 
-(use-package kaolin-themes
-  :config
-  (load-theme 'kaolin-light t))
+;; (use-package kaolin-themes
+;;   :config
+;;   (load-theme 'kaolin-light t))
 
 ;; Broken package
 ;; (use-package mindre-theme
-;;     :ensure t
 ;;     :custom
 ;;     (mindre-use-more-bold nil)
 ;;     (mindre-use-faded-lisp-parens t);;
 ;;     :config
 ;;     (load-theme 'mindre t))
 
+(use-package rainbow-delimiters
+  :config
+  (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
+
 ;; Make the mode line nicer (worse?)
 ;; (use-package mood-line)
 
 ;; (mood-line-mode)
 
+(tab-bar-mode 1)
+(add-to-list 'tab-bar-format #'tab-bar-format-global)
+(add-to-list 'tab-bar-format #'tab-bar-format-menu-bar)
+(setq tab-bar-show 1)
+(setq tab-bar-new-tab-choice "*scratch*")
+
+(use-package smart-mode-line)
+
 ;; Override default behaviors
 (setq
  inhibit-startup-screen nil
  initial-scratch-message nil
- sentence-end-double-space nil
+ sentence-end-double-space t
  ring-bell-function 'ignore
  save-interprogram-paste-before-kill t
  use-dialog-box nil
- mark-even-if-inactive nil
-;; will delete entire line on c-k
-;; kill-whole-line t
+ mark-even-if-inactive t
+;; will delete entire line on c-k, including newline
+ kill-whole-line t
  case-fold-search nil
  use-short-answers t
  ;; choose a good dir
@@ -157,7 +171,57 @@
  kill-do-not-save-duplicates t
 )
 
+(use-package simple
+  :ensure nil
+  :config
+  (global-set-key (kbd "M-u") 'upcase-dwim)
+  (global-set-key (kbd "M-l") 'downcase-dwim)
+  (global-set-key (kbd "M-c") 'capitalize-dwim))
+
+(defun back-to-indentation-or-beginning () (interactive)
+		       (if (= (point) (progn (back-to-indentation) (point)))
+			   (beginning-of-line)))
+
+;; Move point to indentation first, then to beginning of line
+(global-set-key "\C-a" 'back-to-indentation-or-beginning)
+
+(global-set-key "\C-x\M-t" 'transpose-sentences)
+
+(global-set-key (kbd "C-S-O") 'open-previous-line)
+(global-set-key (kbd "C-o") 'open-next-line)
+
+(global-set-key (kbd "C-S-d") 'duplicate-line)
+(global-set-key (kbd "C-S-k") 'kill-whole-line)
+
+(global-set-key (kbd "M-j") 'join-line)
+
 (put 'upcase-region 'disabled nil)
+(put 'downcase-region 'disabled nil)
+(put 'narrow-to-region 'disabled nil)
+(put 'set-goal-column 'disabled nil)
+
+(defun open-next-line (arg)
+  "Move to the next line and then opens a line."
+  (interactive "p")
+  (end-of-line)
+  (open-line arg)
+  (forward-line 1)
+  (when newline-and-indent
+    (indent-according-to-mode)))
+
+;;; behave like vi's O command
+(defun open-previous-line (arg)
+  "Open a new line before the current one."
+  (interactive "p")
+  (beginning-of-line)
+  (open-line arg)
+  (when newline-and-indent
+    (indent-according-to-mode)))
+
+;; (use-package cua-rect
+;;   :ensure nil
+;;   :bind ("C-x SPC" . cua-rectangle-mark-mode))(global-set-key (kbd "C-S-O") 'open-previous-line)
+(global-set-key (kbd "C-o") 'open-next-line)
 
 ;; Switch focus to help window when it appears
 (setopt help-window-select t)
@@ -222,8 +286,7 @@
 
 (use-package fancy-compilation :config (fancy-compilation-mode))
 
-(add-to-list 'default-frame-alist '(fullscreen . maximized))
-
+;; (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 (use-package which-key
   :diminish
@@ -348,7 +411,7 @@
 
 ;; Better handling of popup windows
 (use-package popper
-  :ensure t ; or :straight t
+  ;; :ensure t ; or :straight t
   :bind (("C-`"   . popper-toggle)
          ("M-`"   . popper-cycle)
          ("C-M-`" . popper-toggle-type))
@@ -361,12 +424,19 @@
   (popper-mode 1)
   (popper-echo-mode 1))
 
+(use-package transpose-frame
+  :ensure t
+  :bind (
+         :map ctl-x-4-map
+         ("|" . flop-frame)
+         ("_" . flip-frame)
+         ("\\" . rotate-frame-anticlockwise)))
+
 ;; Show most recent command in modeline
 ;; (use-package keycast)
 ;; (keycast-mode-line-mode)
 
-(use-package vterm
-    :ensure t)
+(use-package vterm)
 
 (use-package counsel
   :custom
@@ -471,6 +541,23 @@ t)
 
 (define-key global-map (kbd "C-M-s") 'isearch-forward-other-window)
 (define-key global-map (kbd "C-M-r") 'isearch-backward-other-window)
+
+;; Corfu
+(use-package corfu
+  :custom
+  (setq corfu-popupinfo-delay 2.0)
+  :init
+  (global-corfu-mode)
+  (corfu-popupinfo-mode))
+
+(use-package emacs
+  :init
+  ;; TAB cycle if there are only few candidates
+  (setq completion-cycle-threshold 3)
+
+  ;; Enable indentation+completion using the TAB key.
+  ;; `completion-at-point' is often bound to M-TAB.
+  (setq tab-always-indent 'complete))
 
 ;; org-mode stuff
 (global-set-key (kbd "C-c l") #'org-store-link)
@@ -623,23 +710,25 @@ t)
 
 ;; CDLatex settings
 (use-package cdlatex
-  :ensure t
+;;   :ensure t
   :hook (LaTeX-mode . turn-on-cdlatex)
   :bind (:map cdlatex-mode-map
               ("<tab>" . cdlatex-tab)))
 
-(require 'lazytab "~/.emacs.d/lisp/lazytab.el")
+(require 'lazytab)
+
+(add-hook 'LaTeX-mode-hook 'lazytab-mode)
 
 (setq cdlatex-env-alist
-      '(("theoremd" "\\begin{theoremd}\nAUTOLABEL\n?\n\\end{theoremd}\n" nil)
-        ("theorem" "\\begin{theorem}\nAUTOLABEL\n?\n\\end{theorem}\n" nil)
-        ("definitiond" "\\begin{definitiond}\nAUTOLABEL\n?\n\\end{definitiond}\n" nil)
-        ("definition" "\\begin{definition}\nAUTOLABEL\n?\n\\end{definition}\n" nil)
-        ("proof" "\\begin{proof}\nAUTOLABEL\n?\n\\end{proof}\n" nil)
-        ("eg" "\\begin{eg}\nAUTOLABEL\n?\n\\end{eg}\n" nil)
-        ("lemma" "\\begin{lemma}\nAUTOLABEL\n?\n\\end{lemma}\n" nil)
-        ("claim" "\\begin{claim}\nAUTOLABEL\n?\n\\end{claim}\n" nil)
-        ("remark" "\\begin{remark}\nAUTOLABEL\n?\n\\end{remark}\n" nil)))
+      '(("theoremd" "\\begin{theoremd}\n?\n\\end{theoremd}\n" nil)
+        ("theorem" "\\begin{theorem}\n?\n\\end{theorem}\n" nil)
+        ("definitiond" "\\begin{definitiond}\n?\n\\end{definitiond}\n" nil)
+        ("definition" "\\begin{definition}\n?\n\\end{definition}\n" nil)
+        ("proof" "\\begin{proof}\n?\n\\end{proof}\n" nil)
+        ("eg" "\\begin{eg}\n?\n\\end{eg}\n" nil)
+        ("lemma" "\\begin{lemma}\n?\n\\end{lemma}\n" nil)
+        ("claim" "\\begin{claim}\n?\n\\end{claim}\n" nil)
+        ("remark" "\\begin{remark}\n?\n\\end{remark}\n" nil)))
 
 (setq cdlatex-command-alist
       '(("thm" "Insert theoremd environment"  "" cdlatex-environment ("theoremd") t nil)
@@ -671,11 +760,12 @@ t)
 (setq cdlatex-math-symbol-alist
       '((?0 ("\\nil"))
         (?B ("\\sup{?}"))
-        (?C ("\\inf{?}"))))
+        (?C ("\\inf{?}"))
+        (?. ("\\cdot" "\\circ"))))
 
 ;; Yasnippet settings
 (use-package yasnippet
-  :ensure t
+;;   :ensure t
   :hook ((LaTeX-mode . yas-minor-mode)
          (LaTeX-mode . yas-reload-all)
          (post-self-insert . my/yas-try-expanding-auto-snippets))
@@ -752,7 +842,7 @@ t)
 
 ;; dashboard
 (use-package dashboard
-  :ensure t
+;;  :ensure t
   :config
   (dashboard-setup-startup-hook))
 ;; (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
@@ -782,8 +872,6 @@ t)
 ;;(setq major-mode-remap-alist
 ;;    '((bash-mode . bash-ts-mode)))
 
-(put 'downcase-region 'disabled nil)
-
 (defun my-toggle-margins ()
 "Set margins in current buffer."
 (interactive)
@@ -797,3 +885,8 @@ t)
     (set-window-buffer (selected-window) (current-buffer))))
 
 (global-set-key [f5] 'my-toggle-margins)
+
+;; epub support
+(use-package nov
+  :custom
+  (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode)))

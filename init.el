@@ -1,6 +1,9 @@
 ;; -*- coding: utf-8; lexical-binding: t; -*-
 
 (add-to-list 'load-path "~/.emacs.d/lisp")
+(add-to-list 'load-path "~/.guix_extra_profiles/emacs/emacs/share/emacs/site-lisp")
+
+(guix-emacs-autoload-packages)
 
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)

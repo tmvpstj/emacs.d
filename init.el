@@ -26,46 +26,31 @@
 (use-package use-package-ensure-system-package)
 (use-package try)
 
-;; removes window decorations in non-daemon windows
-(when (window-system)
-    (tool-bar-mode -1)
-    (scroll-bar-mode -1)
-    (menu-bar-mode -1)
-    (tooltip-mode -1)
-    (set-fringe-mode 0)
-)
-
-(defun my-frame-config (frame)
+;; removes window decorations and sets font faces
+(defun my/frame-setup ()
   (tool-bar-mode -1)
   (scroll-bar-mode -1)
   (menu-bar-mode -1)
   (tooltip-mode -1)
   (set-fringe-mode 0)
+  (spacious-padding-mode 1)
   (set-face-attribute 'default nil :font "Sarasa Mono CL" :height 130)
   (set-face-attribute 'fixed-pitch nil :font "Sarasa Mono CL" :height 130)
-  (set-face-attribute 'variable-pitch nil :font "Sarasa Mono CL" :height 130)
+  ;; (set-face-attribute 'variable-pitch nil :font "Sarasa Mono CL" :height 130)
+  (set-face-attribute 'variable-pitch nil :font "Latin Modern Roman" :height 130)
   ;;(remove-hook 'after-make-frame-functions #'my-frame-config)
 )
 
-;; removes window decorations and sets font for client windows (necessary when running emacs as a daemon)
-(add-hook 'after-make-frame-functions #'my-frame-config)
+;; defers frame setup until after a frame is made for client windows
+;; sets up frame immediately for standalone emacs
+(if (daemonp)
+    (add-hook 'after-make-frame-functions
+              (lambda (frame)
+                (with-selected-frame frame (my/frame-setup))))
+  (my/frame-setup))
 
-(set-face-attribute 'default nil :font "Sarasa Mono CL" :height 130)
-(set-face-attribute 'variable-pitch nil :font "Sarasa Mono CL" :height 130)
-
-(use-package spacious-padding
-  :config
-  (setq spacious-padding-widths
-        '( :right-divider-width 30
-           :internal-border-width 15
-           :tab-width 4
-           :fringe-width 8))
-  (setq spacious-padding-subtle-mode-line nil)
-  ;; Enable spacious padding mode right away for emacs launched in graphical
-  ;; mode, but only activate the mode for client frames when a frame is made
-  (if (window-system)
-      (spacious-padding-mode 1)
-    (add-hook 'after-make-frame-functions #'spacious-padding-mode)))
+;; (set-face-attribute 'default nil :font "Sarasa Mono CL" :height 130)
+;; (set-face-attribute 'variable-pitch nil :font "Sarasa Mono CL" :height 130)
 
 ;; show time in modeline
 (use-package time
@@ -78,11 +63,13 @@
   :config
   (display-time-mode 1))
 
+(display-battery-mode 1)
+
 ;; Shorten the modeline if it is wider than the window
 (setopt mode-line-compact 'long)
 
 ;; (modify-all-frames-parameters
-;;   '((internal-border-width . 20)
+;;   '((internal-border-width . 30)
 ;;     (right-divider-width . 4)))
 
 ;; (add-hook 'after-make-frame-functions
@@ -113,6 +100,24 @@
   :init
   (load-theme 'modus-operandi t))
 
+(use-package spacious-padding
+  :defer 2
+  :config
+  (setq spacious-padding-widths
+        '( :right-divider-width 30
+           :internal-border-width 15
+           :tab-width 4
+           :fringe-width 8))
+  (setq spacious-padding-subtle-mode-line nil)
+  ;; Enable spacious padding mode right away for emacs launched in graphical
+  ;; mode, but only activate the mode for client frames when a frame is made
+  ;; (if (window-system)
+  ;;     (spacious-padding-mode 1)
+  ;;   (add-hook 'after-make-frame-functions #'spacious-padding-mode)))
+  )
+
+(setopt frame-resize-pixelwise t)
+
 ;; (use-package kaolin-themes
 ;;   :config
 ;;   (load-theme 'kaolin-light t))
@@ -129,18 +134,25 @@
   :config
   (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
 
+(use-package rainbow-blocks)
+
 ;; Make the mode line nicer (worse?)
 ;; (use-package mood-line)
 
 ;; (mood-line-mode)
 
 (tab-bar-mode 1)
-(add-to-list 'tab-bar-format #'tab-bar-format-global)
-(add-to-list 'tab-bar-format #'tab-bar-format-menu-bar)
+(setq tab-bar-format '(tab-bar-format-history
+               tab-bar-format-tabs
+               tab-bar-separator
+               tab-bar-format-align-right
+               tab-bar-format-global))
 (setq tab-bar-show 1)
 (setq tab-bar-new-tab-choice "*scratch*")
 
 (use-package smart-mode-line)
+
+(setopt mode-line-compact 'long)
 
 ;; Override default behaviors
 (setq
@@ -202,6 +214,8 @@
 
 (setq visual-line-mode nil)
 
+(defvar newline-and-indent t)
+
 (defun open-next-line (arg)
   "Move to the next line and then opens a line."
   (interactive "p")
@@ -239,7 +253,7 @@
 
 (setopt indent-tabs-mode nil
         tab-width 2
-        fill-columns 80)
+        fill-column 80)
 
 (set-charset-priority 'unicode)
 (prefer-coding-system 'utf-8-unix)
@@ -248,6 +262,8 @@
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
 (column-number-mode)
 (savehist-mode)
+
+(setopt large-file-warning-threshold nil)
 
 ;; Don't wrap lines
 (setq-default truncate-lines t)
@@ -364,7 +380,7 @@
            " " filename)))
 
   :config
-  (defun crz/human-readable-file-sizes-to-bytes (string)
+  (defun my/human-readable-file-sizes-to-bytes (string)
     "Convert a human-readable file size into bytes."
     (cond
      ((string-suffix-p "G" string t)
@@ -376,7 +392,7 @@
      (t
       (string-to-number (substring string 0 (- (length string) 1))))))
 
-  (defun crz/bytes-to-human-readable-file-sizes (bytes)
+  (defun my/bytes-to-human-readable-file-sizes (bytes)
     "Convert number of bytes to human-readable file size."
     (cond
      ((> bytes 1000000000) (format "%10.1fG" (/ bytes 1000000000.0)))
@@ -394,10 +410,10 @@
              (let ((total 0))
                (dolist (string column-strings)
                  (setq total
-                       (+ (float (crz/human-readable-file-sizes-to-bytes string))
+                       (+ (float (my/human-readable-file-sizes-to-bytes string))
                           total)))
-               (crz/bytes-to-human-readable-file-sizes total))))
-    (crz/bytes-to-human-readable-file-sizes (buffer-size))))
+               (my/bytes-to-human-readable-file-sizes total))))
+    (my/bytes-to-human-readable-file-sizes (buffer-size))))
 
 ;; Visual undo tree
 (use-package vundo
@@ -440,26 +456,85 @@
 
 (use-package vterm)
 
-(use-package counsel
-  :custom
-  (setq ivy-use-virtual-buffers t)
-  (setq ivy-count-format "(%d/%d) ")
+;; (use-package counsel
+;;   :custom
+;;   (setq ivy-use-virtual-buffers t)
+;;   (setq ivy-count-format "(%d/%d) ")
 
-  :config
-  (ivy-mode 1))
+;;   :config
+;;   (ivy-mode 1))
 
 ;; Ivy/counsel/swiper default keybinds
-(global-set-key (kbd "C-s") 'swiper-isearch)
-(global-set-key (kbd "M-x") 'counsel-M-x)
-(global-set-key (kbd "C-x C-f") 'counsel-find-file)
-(global-set-key (kbd "M-y") 'counsel-yank-pop)
-(global-set-key (kbd "<f1> f") 'counsel-describe-function)
-(global-set-key (kbd "<f1> v") 'counsel-describe-variable)
-(global-set-key (kbd "<f1> l") 'counsel-find-library)
-(global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
-(global-set-key (kbd "<f2> u") 'counsel-unicode-char)
-(global-set-key (kbd "<f2> j") 'counsel-set-variable)
-(global-set-key (kbd "C-x b") 'ivy-switch-buffer)
+;; (global-set-key (kbd "C-s") 'swiper-isearch)
+;; (global-set-key (kbd "M-x") 'counsel-M-x)
+;; (global-set-key (kbd "C-x C-f") 'counsel-find-file)
+;; (global-set-key (kbd "M-y") 'counsel-yank-pop)
+;; (global-set-key (kbd "<f1> f") 'counsel-describe-function)
+;; (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+;; (global-set-key (kbd "<f1> l") 'counsel-find-library)
+;; (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
+;; (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+;; (global-set-key (kbd "<f2> j") 'counsel-set-variable)
+;; (global-set-key (kbd "C-x b") 'ivy-switch-buffer)
+
+;; Ripgrep
+(use-package rg)
+
+;; Vertico
+(use-package vertico
+  :defer 1
+  :bind (:map vertico-map
+              ("DEL" . vertico-directory-delete-char)
+              ("C-;" . vertico-grid-mode)
+              ("C-'" . vertico-quick-exit))
+  :config
+  (setq vertico-multiform-categories
+        '((file grid)
+          (consult-grep buffer)
+          (imenu buffer)))
+  (vertico-multiform-mode)
+  (vertico-mode 1))
+
+(use-package consult
+  :after vertico
+  :demand nil
+  :bind (:map minibuffer-mode-map
+         ("C-r" . consult-history))
+  :custom
+  (completion-in-region-function
+   (lambda (&rest args)
+     (apply (if (or vertico-mode fido-vertical-mode)
+                'consult-completion-in-region
+              'completion--in-region)
+            args)))
+  :config
+  (consult-customize consult-org-heading :preview-key nil))
+
+(global-set-key (kbd "C-s") 'consult-line)
+(global-set-key (kbd "C-x b") 'consult-buffer)
+(global-set-key (kbd "M-s i") 'consult-imenu)
+(global-set-key (kbd "M-s g") 'consult-ripgrep)
+
+(use-package marginalia
+  :after vertico
+  :demand nil
+  :config
+  (marginalia-mode 1))
+
+(use-package orderless
+  :after vertico
+  :custom
+  (read-buffer-completion-ignore-case t)
+  (read-file-name-completion-ignore-case t)
+  (completion-ignore-case t)
+  (completion-styles '(basic substring initials flex orderless))
+  (completion-category-overrides '((file (styles . (basic partial-completion orderless)))))
+  (completion-category-defaults nil)
+  (orderless-matching-styles '(orderless-prefixes orderless-regexp)))
+
+(setopt enable-recursive-minibuffers t)
+
+(minibuffer-depth-indicate-mode 1)
 
 ;; Avy keybinds
 (avy-setup-default)
@@ -561,6 +636,17 @@ t)
   ;; `completion-at-point' is often bound to M-TAB.
   (setq tab-always-indent 'complete))
 
+;; Eshell
+(use-package esh-mode
+  :ensure nil
+  :bind (("C-c e" . eshell))
+  :custom
+  (eshell-buffer-maximum-lines 1000)
+  (eshell-scroll-to-bottom-on-input t)
+  (eshell-destroy-buffer-when-process-dies t)
+  :config
+  (add-to-list 'eshell-output-filter-functions 'eshell-truncate-buffer))
+
 ;; org-mode stuff
 (global-set-key (kbd "C-c l") #'org-store-link)
 (global-set-key (kbd "C-c a") #'org-agenda)
@@ -574,22 +660,28 @@ t)
       org-log-redeadline 'time
       org-log-reschedule 'time
       )
-(setq
- ;; Edit settings
- org-auto-align-tags nil
- org-tags-column 0
- org-catch-invisible-edits 'show-and-error
- org-special-ctrl-a/e t
- org-insert-heading-respect-content t
 
- ;; Org styling, hide markup etc.
- org-hide-emphasis-markers t
- org-pretty-entities t
- org-ellipsis "…"
+(use-package org
+  :ensure nil
+  :custom
+  (org-src-window-setup 'current-window)
+  (org-src-preserve-indentation t)
+  (org-edit-src-content-indentation 0)
+  :config
+  (require 'org-tempo)
+  (add-to-list 'org-modules 'org-tempo)
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+  (add-to-list 'org-structure-template-alist '("li" . "src lisp"))
+  (add-to-list 'org-structure-template-alist '("sc" . "src scheme"))
+  (add-to-list 'org-structure-template-alist '("sh" . "src sh"))
+  (add-to-list 'org-structure-template-alist '("eltn" . "src emacs-lisp :tangle no :noweb-ref"))
 
- ;; Agenda styling
- org-agenda-tags-column 0
- org-agenda-block-separator ?─)
+  :hook ((org-mode . org-toggle-pretty-entities)
+         (org-mode . visual-line-mode)
+         (org-mode . visual-fill-column-mode)
+         (org-mode . variable-pitch-mode)
+         (org-mode . mixed-pitch-mode)
+         (org-mode . org-modern-mode)))
 
 (setq org-preview-latex-default-process 'dvisvgm)
 
@@ -598,29 +690,31 @@ t)
   :custom
   (setq
  ;; Edit settings
- org-auto-align-tags nil
- org-tags-column 0
- org-catch-invisible-edits 'show-and-error
- org-special-ctrl-a/e t
- org-insert-heading-respect-content t
+   org-auto-align-tags nil
+   org-tags-column 0
+   org-catch-invisible-edits 'show-and-error
+   org-special-ctrl-a/e t
+   org-insert-heading-respect-content t
 
- ;; Org styling, hide markup etc.
- org-hide-emphasis-markers t
- org-pretty-entities t
- org-ellipsis "…"
+   ;; Org styling, hide markup etc.
+   org-hide-emphasis-markers t
+   org-pretty-entities t
+   org-ellipsis "…"
 
- ;; Agenda styling
- org-agenda-tags-column 0
- org-agenda-block-separator ?─
- org-agenda-time-grid
- '((daily today require-timed)
-   (800 1000 1200 1400 1600 1800 2000)
-   " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
- org-agenda-current-time-string
- "◀── now ─────────────────────────────────────────────────")
-  (add-hook 'org-mode-hook #'org-modern-mode)
+   ;; Agenda styling
+   org-agenda-tags-column 0
+   org-agenda-block-separator ?─
+   org-agenda-time-grid
+   '((daily today require-timed)
+     (800 1000 1200 1400 1600 1800 2000)
+     " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
+   org-agenda-current-time-string
+   "◀── now ─────────────────────────────────────────────────")
   (add-hook 'org-agenda-finalize-hook #'org-modern-agenda))
 
+(use-package visual-fill-column)
+
+(use-package mixed-pitch)
 
 (use-package pdf-tools
   :config
@@ -686,7 +780,7 @@ t)
 (add-hook 'LaTeX-mode-hook
           (defun preview-smaller-previews ()
             (setq preview-scale-function
-                  (lambda () (* 0.70
+                  (lambda () (* 0.65
                            (funcall (preview-scale-from-face)))))))
 
 
@@ -729,15 +823,16 @@ t)
 (add-hook 'LaTeX-mode-hook 'lazytab-mode)
 
 (setq cdlatex-env-alist
-      '(("theoremd" "\\begin{theoremd}\n?\n\\end{theoremd}\n" nil)
-        ("theorem" "\\begin{theorem}\n?\n\\end{theorem}\n" nil)
-        ("definitiond" "\\begin{definitiond}\n?\n\\end{definitiond}\n" nil)
-        ("definition" "\\begin{definition}\n?\n\\end{definition}\n" nil)
-        ("proof" "\\begin{proof}\n?\n\\end{proof}\n" nil)
-        ("eg" "\\begin{eg}\n?\n\\end{eg}\n" nil)
-        ("lemma" "\\begin{lemma}\n?\n\\end{lemma}\n" nil)
-        ("claim" "\\begin{claim}\n?\n\\end{claim}\n" nil)
-        ("remark" "\\begin{remark}\n?\n\\end{remark}\n" nil)))
+      '(("theoremd" "\\begin{theoremd}\n\t?\n\\end{theoremd}\n" nil)
+        ("theorem" "\\begin{theorem}\n\t?\n\\end{theorem}\n" nil)
+        ("definitiond" "\\begin{definitiond}\n\t?\n\\end{definitiond}\n" nil)
+        ("definition" "\\begin{definition}\n\t?\n\\end{definition}\n" nil)
+        ("proof" "\\begin{proof}\n\t?\n\\end{proof}\n" nil)
+        ("eg" "\\begin{eg}\n\t?\n\\end{eg}\n" nil)
+        ("lemma" "\\begin{lemma}\n\t?\n\\end{lemma}\n" nil)
+        ("claim" "\\begin{claim}\n\t?\n\\end{claim}\n" nil)
+        ("remark" "\\begin{remark}\n\t?\n\\end{remark}\n" nil)
+        ("corollary" "\\begin{corollary}\n\t?\n\\end{corollary}\n" nil)))
 
 (setq cdlatex-command-alist
       '(("thm" "Insert theoremd environment"  "" cdlatex-environment ("theoremd") t nil)
@@ -801,7 +896,8 @@ t)
 ;; Allows cdlatex to use tab inside yasnippet fields
 (use-package cdlatex
   :hook ((cdlatex-tab . yas-expand)
-         (cdlatex-tab . cdlatex-in-yas-field))
+         (cdlatex-tab . cdlatex-in-yas-field)
+         (org-mode . org-cdlatex-mode))
   :config
   (use-package yasnippet
     :bind (:map yas-keymap

@@ -1,4 +1,4 @@
-;; -*- coding: utf-8; lexical-binding: t; -*-
+; -*- coding: utf-8; lexical-binding: t; -*-
 
 (add-to-list 'load-path "~/.emacs.d/lisp")
 (add-to-list 'load-path "~/.guix_extra_profiles/emacs/emacs/share/emacs/site-lisp")
@@ -13,8 +13,9 @@
 (setq use-package-always-ensure t)
 (unless (package-installed-p 'use-package)
   (message "refreshing contents")
-  (unless package-archive-contents (package-refresh-contents))
-  (package-install 'use-package))
+  (unless package-archive-contents
+    (package-refresh-contents))
+   (package-install 'use-package))
 
 (eval-when-compile
   (require 'use-package))
@@ -37,8 +38,9 @@
   (tooltip-mode -1)
   (set-fringe-mode 0)
   (spacious-padding-mode 1)
-  (set-face-attribute 'default nil :font "Sarasa Mono CL" :height 130)
-  (set-face-attribute 'fixed-pitch nil :font "Sarasa Mono CL" :height 130)
+  (tab-bar-mode 1)
+  (set-face-attribute 'default nil :font "Iosevka Comfy" :height 130)
+  (set-face-attribute 'fixed-pitch nil :font "Iosevka Comfy" :height 130)
   ;; (set-face-attribute 'variable-pitch nil :font "Sarasa Mono CL" :height 130)
   (set-face-attribute 'variable-pitch nil :font "Latin Modern Roman" :height 130)
   ;;(remove-hook 'after-make-frame-functions #'my-frame-config)
@@ -51,9 +53,6 @@
               (lambda (frame)
                 (with-selected-frame frame (my/frame-setup))))
   (my/frame-setup))
-
-;; (set-face-attribute 'default nil :font "Sarasa Mono CL" :height 130)
-;; (set-face-attribute 'variable-pitch nil :font "Sarasa Mono CL" :height 130)
 
 ;; show time in modeline
 (use-package time
@@ -75,18 +74,9 @@
 ;;   '((internal-border-width . 30)
 ;;     (right-divider-width . 4)))
 
-;; (add-hook 'after-make-frame-functions
-;;          (lambda (f) (set-face-attribute 'default :font "Iosevka Term-12.5")))
-
 (blink-cursor-mode 0)
 (setopt cursor-type '(hbar . 3)
         cursor-in-non-selected-windows nil)
-
-;; (use-package doom-themes
-;;   :config
-;;   (let ((chosen-theme 'doom-opera-light))
-;;     (doom-themes-visual-bell-config)
-;;     (load-theme chosen-theme)))
 
 ;; (use-package ef-themes
 ;;   :config
@@ -104,7 +94,7 @@
   (load-theme 'modus-operandi t))
 
 (use-package spacious-padding
-  :defer 2
+  :defer t
   :config
   (setq spacious-padding-widths
         '( :right-divider-width 30
@@ -125,15 +115,8 @@
 ;;   :config
 ;;   (load-theme 'kaolin-light t))
 
-;; Broken package
-;; (use-package mindre-theme
-;;     :custom
-;;     (mindre-use-more-bold nil)
-;;     (mindre-use-faded-lisp-parens t);;
-;;     :config
-;;     (load-theme 'mindre t))
-
 (use-package rainbow-delimiters
+  :defer t
   :config
   (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
 
@@ -144,7 +127,6 @@
 
 ;; (mood-line-mode)
 
-(tab-bar-mode 1)
 (setq tab-bar-format '(tab-bar-format-history
                tab-bar-format-tabs
                tab-bar-separator
@@ -153,7 +135,17 @@
 (setq tab-bar-show 1)
 (setq tab-bar-new-tab-choice "*scratch*")
 
-(use-package smart-mode-line)
+;; (use-package centaur-tabs
+;;   :demand t
+;;   :custom
+;;   (centaur-tabs-set-modified-marker t)
+;;   (centaur-tabs-modified-marker " * ")
+;;   (centaur-tabs-set-icons t)
+;;   (centaur-tabs-icon-type 'all-the-icons)
+;;   :config
+;;   (centaur-tabs-mode t))
+
+;; (use-package smart-mode-line)
 
 (setopt mode-line-compact 'long)
 
@@ -186,6 +178,12 @@
  kill-do-not-save-duplicates t
 )
 
+(use-package olivetti
+  :defer t
+  :custom
+  (olivetti-style nil)   ;; change to t for fringes or fancy for margins
+  :bind ([f5] . olivetti-mode))
+
 (use-package simple
   :ensure nil
   :config
@@ -209,6 +207,8 @@
 (global-set-key (kbd "C-S-k") 'kill-whole-line)
 
 (global-set-key (kbd "M-j") 'join-line)
+
+(global-set-key (kbd "<backtab>") 'indent-according-to-mode)
 
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
@@ -274,9 +274,10 @@
 ;; Insert closing brackets automatically
 (electric-pair-mode)
 
-(require 'hl-line)
-(add-hook 'prog-mode-hook #'hl-line-mode)
-(add-hook 'text-mode-hook #'hl-line-mode)
+(use-package hl-line
+  :ensure nil
+  :hook ((prog-mode . hl-line-mode)
+         (text-mode . hl-line-mode)))
 
 (setq
  make-backup-files nil
@@ -305,7 +306,11 @@
 (keymap-global-unset "C-z")
 (keymap-global-unset "C-x C-z")
 
-(use-package fancy-compilation :config (fancy-compilation-mode))
+(use-package fancy-compilation
+  :config
+  (fancy-compilation-mode))
+
+(use-package diminish)
 
 ;; (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
@@ -329,7 +334,7 @@
 
 (use-package icomplete
   :ensure nil
-  :defer 1
+  :defer t
   :bind (:map icomplete-fido-mode-map
          ("<tab>" . icomplete-force-complete)
          ("RET" . icomplete-force-complete-and-exit))
@@ -365,6 +370,7 @@
 
 ;; Ibuffer
 (use-package ibuffer
+  :defer t
   :ensure nil
   :bind (([remap list-buffers] . ibuffer)
          ("C-c b" . ibuffer))
@@ -425,6 +431,7 @@
 
 ;; Improve window switching
 (use-package ace-window
+  :defer t
   :bind ("M-o" . ace-window)
   :custom
   (aw-scope 'frame)
@@ -433,6 +440,7 @@
 ;; Better handling of popup windows
 (use-package popper
   ;; :ensure t ; or :straight t
+  :defer t
   :bind (("C-`"   . popper-toggle)
          ("M-`"   . popper-cycle)
          ("C-M-`" . popper-toggle-type))
@@ -446,7 +454,7 @@
   (popper-echo-mode 1))
 
 (use-package transpose-frame
-  :ensure t
+  :defer t
   :bind (
          :map ctl-x-4-map
          ("|" . flop-frame)
@@ -457,7 +465,11 @@
 ;; (use-package keycast)
 ;; (keycast-mode-line-mode)
 
-(use-package vterm)
+(use-package vterm
+  :defer t
+  :ensure nil
+  :custom
+  (vterm-kill-buffer-on-exit t))
 
 ;; (use-package counsel
 ;;   :custom
@@ -481,7 +493,8 @@
 ;; (global-set-key (kbd "C-x b") 'ivy-switch-buffer)
 
 ;; Ripgrep
-(use-package rg)
+;; using guix package instead
+;; (use-package rg)
 
 ;; Vertico
 (use-package vertico
@@ -501,7 +514,18 @@
 (use-package consult
   :after vertico
   :demand nil
-  :bind (:map minibuffer-mode-map
+  :bind (("C-s" . consult-line)
+         ("C-x b" . consult-buffer)
+         ("M-s i" . consult-imenu)
+         ("M-s g" . consult-ripgrep)
+         ("M-s e" . consult-isearch-history) ;; somewhat redundant
+         ("M-s k" . consult-keep-lines)
+         ("M-s f" . consult-focus-lines)
+         ("M-g g" . consult-goto-line)
+         ("M-g m" . consult-mark)
+         ("C-x 4 b" . consult-buffer-other-window)
+         ("C-x 5 b" . consult-buffer-other-frame)
+         :map minibuffer-mode-map
          ("C-r" . consult-history))
   :custom
   (completion-in-region-function
@@ -512,11 +536,6 @@
             args)))
   :config
   (consult-customize consult-org-heading :preview-key nil))
-
-(global-set-key (kbd "C-s") 'consult-line)
-(global-set-key (kbd "C-x b") 'consult-buffer)
-(global-set-key (kbd "M-s i") 'consult-imenu)
-(global-set-key (kbd "M-s g") 'consult-ripgrep)
 
 (use-package marginalia
   :after vertico
@@ -530,7 +549,7 @@
   (read-buffer-completion-ignore-case t)
   (read-file-name-completion-ignore-case t)
   (completion-ignore-case t)
-  (completion-styles '(basic substring initials flex orderless))
+  (completion-styles '(orderless substring initials flex basic))
   (completion-category-overrides '((file (styles . (basic partial-completion orderless)))))
   (completion-category-defaults nil)
   (orderless-matching-styles '(orderless-prefixes orderless-regexp)))
@@ -625,10 +644,47 @@ t)
 ;; Corfu
 (use-package corfu
   :custom
-  (setq corfu-popupinfo-delay 2.0)
+  (corfu-popupinfo-delay 2.0)
   :init
   (global-corfu-mode)
   (corfu-popupinfo-mode))
+
+(use-package cape
+  :bind(("C-c p p" . completion-at-point) ;; capf
+        ("C-c p t" . complete-tag)        ;; etags
+        ("C-c p d" . cape-dabbrev)        ;; or dabbrev-completion
+        ("C-c p h" . cape-history)
+        ("C-c p f" . cape-file)
+        ("C-c p k" . cape-keyword)
+        ("C-c p s" . cape-elisp-symbol)
+        ("C-c p e" . cape-elisp-block)
+        ("C-c p a" . cape-abbrev)
+        ("C-c p l" . cape-line)
+        ("C-c p w" . cape-dict)
+        ("C-c p :" . cape-emoji)
+        ("C-c p \\" . cape-tex)
+        ("C-c p _" . cape-tex)
+        ("C-c p ^" . cape-tex)
+        ("C-c p &" . cape-sgml)
+        ("C-c p r" . cape-rfc1345))
+  :init
+  ;; Add to the global default value of `completion-at-point-functions' which is
+  ;; used by `completion-at-point'.  The order of the functions matters, the
+  ;; first function returning a result wins.  Note that the list of buffer-local
+  ;; completion functions takes precedence over the global list.
+  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+  (add-to-list 'completion-at-point-functions #'cape-file)
+  (add-to-list 'completion-at-point-functions #'cape-elisp-block)
+  ;;(add-to-list 'completion-at-point-functions #'cape-history)
+  (add-to-list 'completion-at-point-functions #'cape-keyword)
+  ;; (add-to-list 'completion-at-point-functions #'cape-tex)
+  ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
+  ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
+  ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
+  ;;(add-to-list 'completion-at-point-functions #'cape-dict)
+  ;;(add-to-list 'completion-at-point-functions #'cape-elisp-symbol)
+  ;;(add-to-list 'completion-at-point-functions #'cape-line)
+  )
 
 (use-package emacs
   :init
@@ -649,6 +705,22 @@ t)
   (eshell-destroy-buffer-when-process-dies t)
   :config
   (add-to-list 'eshell-output-filter-functions 'eshell-truncate-buffer))
+
+(use-package mingus
+  :custom
+  (mingus-mode-line-show-elapsed-time nil)
+  (mingus-mode-line-show-volume nil))
+
+(use-package erc
+  :ensure nil
+  :custom
+  (erc-server "irc.libera.chat")
+  (erc-nick "uwihz")
+  (erc-track-shorten-start 8)
+  (erc-autojoin-channels-alist '(("irc.libera.chat" "#guix" "#emacs")))
+  (erc-kill-buffer-on-part t)
+  (erc-auto-query 'bury)
+  (erc-hide-list '("JOIN" "PART" "QUIT")))
 
 ;; org-mode stuff
 (global-set-key (kbd "C-c l") #'org-store-link)
@@ -690,6 +762,7 @@ t)
 
 ;; Org-modern
 (use-package org-modern
+  :defer t
   :custom
   (setq
  ;; Edit settings
@@ -720,10 +793,30 @@ t)
 (use-package mixed-pitch)
 
 (use-package pdf-tools
+  :mode ("\\.pdf\\'" . pdf-view-mode)
+  :magic ("%PDF" . pdf-view-mode)
   :config
 
+  ;; stolen almost verbatim from doom emacs
+  ;; not sure if it even works or if pdf-tools just works with epdf already
+  ;; installed
+  ;; (defun pdf--install-epdfinfo-a (fn &rest args)
+  ;;   "Install epdfinfo after the first PDF file, if needed."
+  ;;   (if (and (require 'pdf-info nil t)
+  ;;            (or (pdf-info-running-p)
+  ;;                (ignore-errors (pdf-info-check-epdfinfo) t)))
+  ;;       (apply fn args)
+  ;;     ;; If we remain in pdf-view-mode, it'll spit out cryptic errors. This
+  ;;     ;; graceful failure is better UX.
+  ;;     (fundamental-mode)
+  ;;     (message "Viewing PDFs in Emacs requires epdfinfo. Use `M-x pdf-tools-install' to build it")))
+
+  ;; (advice-add 'pdf-view-mode :around #'pdf--install-epdfinfo-a)
+  ;; (pdf-tools-install-noverify)
+  (pdf-tools-install :no-query)
+
   ;; Bootstrap pdf-tools
-  (pdf-tools-install)
+  ;; (pdf-loader-install)
   (setq-default pdf-view-display-size 'fit-width)
 
   ;; Use isearch in pdfs
@@ -755,11 +848,12 @@ t)
                                     calc-prefer-frac t
                                     calc-angle-mode rad))))))))
 
+;; TODO: include this in use-package form
 (setq TeX-parse-self t)
 (setq TeX-save-query nil)
 (setq-default TeX-master nil)
 (add-hook 'LaTeX-mode-hook 'visual-line-mode)
-;; (add-hook 'LaTeX-mode-hook 'flyspell-mode)
+(add-hook 'LaTeX-mode-hook 'flyspell-mode)
 (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
 (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
 (add-hook 'LaTeX-mode-hook 'auto-fill-mode)
@@ -780,11 +874,11 @@ t)
   :bind (
          :map LaTeX-mode-map ("C-j" . avy-goto-char-timer)))
 
-(add-hook 'LaTeX-mode-hook
-          (defun preview-smaller-previews ()
-            (setq preview-scale-function
-                  (lambda () (* 0.65
-                           (funcall (preview-scale-from-face)))))))
+;; (add-hook 'LaTeX-mode-hook
+;;           (defun preview-smaller-previews ()
+;;             (setq preview-scale-function
+;;                   (lambda () (* 0.65
+;;                            (funcall (preview-scale-from-face)))))))
 
 
 (use-package latex-change-env
@@ -816,6 +910,7 @@ t)
 
 ;; CDLatex settings
 (use-package cdlatex
+  :defer t
 ;;   :ensure t
   :hook (LaTeX-mode . turn-on-cdlatex)
   :bind (:map cdlatex-mode-map
@@ -872,7 +967,7 @@ t)
 
 ;; Yasnippet settings
 (use-package yasnippet
-;;   :ensure t
+  :defer t
   :hook ((LaTeX-mode . yas-minor-mode)
          (LaTeX-mode . yas-reload-all)
          (post-self-insert . my/yas-try-expanding-auto-snippets))
@@ -888,13 +983,18 @@ t)
         '("~/.emacs.d/snippets"))
   (setq yas-indent-line 'auto)
 
+  ;; yasnippet tries to prompt for a snippet name even when the expansion is
+  ;; unambiguous, so don't use any prompt at all
+  ;; kind of hacky but it works for me
+  (setq yas-prompt-functions nil)
+
   (defun my/yas-try-expanding-auto-snippets ()
     (when (and (boundp 'yas-minor-mode) yas-minor-mode)
       (let ((yas-buffer-local-condition ''(require-snippet-condition . auto)))
         (yas-expand)))))
 
 ;; Try after every insertion
-(add-hook 'post-self-insert-hook #'my/yas-try-expanding-auto-snippets)
+;; (add-hook 'post-self-insert-hook #'my/yas-try-expanding-auto-snippets)
 
 ;; Allows cdlatex to use tab inside yasnippet fields
 (use-package cdlatex
@@ -950,30 +1050,28 @@ t)
 
 ;; dashboard
 (use-package dashboard
-;;  :ensure t
   :config
-  (dashboard-setup-startup-hook))
-;; (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
-(setq dashboard-banner-logo-title "Welcome to Emacs Dashboard")
-;; (setq dashboard-startup-banner 'logo)
-(setq dashboard-center-content t)
-(setq dashboard-set-navigator t)
-(setq dashboard-set-footer nil)
-(setq dashboard-week-agenda t)
-(setq dashboard-icon-type 'all-the-icons)
-(setq dashboard-set-heading-icons t)
-(setq dashboard-set-file-icons t)
-(setq dashboard-heading-icons '((recents   . "clock")
-                                (bookmarks . "bookmark")
-                                (agenda    . "calendar")
-                                (projects  . "rocket")
-                                (registers . "database")))
+  (dashboard-setup-startup-hook)
+  ;; (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
+  (setq dashboard-banner-logo-title "Welcome to Emacs Dashboard")
+  ;; (setq dashboard-startup-banner 'logo)
+  (setq dashboard-center-content t)
+  (setq dashboard-set-navigator t)
+  (setq dashboard-set-footer nil)
+  (setq dashboard-week-agenda t)
+  (setq dashboard-icon-type 'all-the-icons)
+  (setq dashboard-set-heading-icons t)
+  (setq dashboard-set-file-icons t)
+  (setq dashboard-heading-icons '((recents   . "clock")
+                                  (bookmarks . "bookmark")
+                                  (agenda    . "calendar")
+                                  (projects  . "rocket")
+                                  (registers . "database"))))
 
 (add-hook 'server-after-make-frame-hook (lambda()
-    (switch-to-buffer dashboard-buffer-name)
+    ;; (switch-to-buffer dashboard-buffer-name)
     (dashboard-mode)
     (dashboard-insert-startupify-lists)
-
     (dashboard-refresh-buffer)))
 
 ;; treesitter
@@ -992,9 +1090,6 @@ t)
     (setq right-margin-width 26)
     (set-window-buffer (selected-window) (current-buffer))))
 
-(global-set-key [f5] 'my-toggle-margins)
-
 ;; epub support
 (use-package nov
-  :custom
-  (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode)))
+  :mode ("\\.epub\\'" . nov-mode))

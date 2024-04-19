@@ -43,16 +43,18 @@
   (set-face-attribute 'fixed-pitch nil :font "Iosevka Comfy" :height 130)
   ;; (set-face-attribute 'variable-pitch nil :font "Sarasa Mono CL" :height 130)
   (set-face-attribute 'variable-pitch nil :font "Latin Modern Roman" :height 130)
-  ;;(remove-hook 'after-make-frame-functions #'my-frame-config)
+  ;; (remove-hook 'after-make-frame-functions #'my/frame-setup)
 )
 
 ;; defers frame setup until after a frame is made for client windows
 ;; sets up frame immediately for standalone emacs
+;; adds significantly to startup time for non-daemon (ca. 1s)
 (if (daemonp)
     (add-hook 'after-make-frame-functions
               (lambda (frame)
                 (with-selected-frame frame (my/frame-setup))))
   (my/frame-setup))
+
 
 ;; show time in modeline
 (use-package time
@@ -968,6 +970,7 @@ t)
 ;; Yasnippet settings
 (use-package yasnippet
   :defer t
+  :diminish
   :hook ((LaTeX-mode . yas-minor-mode)
          (LaTeX-mode . yas-reload-all)
          (post-self-insert . my/yas-try-expanding-auto-snippets))
@@ -1045,6 +1048,10 @@ t)
                 (call-process "texcount" nil t nil "-brief" this-file)))))
       (string-match "\n$" word-count)
       (message (replace-match "" nil nil word-count))))
+
+(use-package flyspell
+  :ensure nil
+  :diminish)
 
 (use-package all-the-icons)
 
